@@ -289,6 +289,21 @@ own description, the permitted values where SEP-1 enumerates them (`live`, `dead
 `private`), and a link to the section of SEP-1 that defines the field. Hovering whitespace, a
 comment, or a key SEP-1 does not define shows nothing at all.
 
+Hovering a line that names a Soroban contract (`[[CURRENCIES]].contract`, `WEB_AUTH_CONTRACT_ID`,
+or a `contract_id` key) can also show the contract's custom errors: every `#[contracterror]` enum
+in the deployed WASM's `contractspecv0` section, as a Markdown table of integer codes, case names,
+and doc comments, so `Error(Contract, #7)` is readable without opening the Rust source. This
+needs the Soroban RPC, so like `--check-contracts` it is off unless the editor opts in through
+`initializationOptions`:
+
+```json
+{ "checkContracts": true, "sorobanRpc": "https://soroban-testnet.stellar.org" }
+```
+
+`sorobanRpc` is optional; without it the endpoint is derived from the file's
+`NETWORK_PASSPHRASE`. Each contract is fetched once per session and cached. An unreachable RPC,
+an archived contract, or a module without a spec leaves the SEP-1 hover unchanged.
+
 ### Alerting a Slack or Discord channel
 
 ```console
@@ -843,6 +858,15 @@ Contract specs are also audited for contract upgrade functions (`upgrade`, `set_
 An upgrade function exported without admin protection or authorization checks emits
 `soroban/unprotected-upgrade-function` (error), and an upgrade admin account secured by only a single signer
 emits `soroban/single-signer-upgrade-admin` (warning).
+
+Each deployed WASM also gets a static resource estimate, read from the module's sections without
+executing it. A Memory section that reserves more than 10 pages (640 KiB) at instantiation emits
+`soroban/excessive-static-memory-pages` (warning); the message also reports the static heap the
+Data section's initialisers occupy. The cyclomatic complexity of each exported SEP-41 function
+(`transfer`, `balance`, `approve`, …) is counted from its branch instructions (`if`, `br_if`, and
+each extra `br_table` target), and one above 50 emits `soroban/high-cyclomatic-complexity`
+(warning). The limit sits well above source-level thresholds because compiled WASM inlines helpers
+into each entry point. A module that cannot be fetched or parsed is skipped, not guessed at.
 
 In addition, under `--check-network`, Soroban Stellar Asset Contracts (SAC) total supply (`total_supply()`) is
 verified against the classic asset's issued supply from Horizon `/assets`. If the supplies diverge within a
