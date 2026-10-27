@@ -54,7 +54,17 @@ execFileSync(
 
 execFileSync(
   npx,
-  ['--yes', '@yao-pkg/pkg@5.16.1', bundle, '--targets', target, '--output', output],
+  [
+    '--yes',
+    '@yao-pkg/pkg@5.16.1',
+    bundle,
+    '--targets',
+    target,
+    '--compress',
+    'GZip',
+    '--output',
+    output,
+  ],
   { stdio: 'inherit' },
 );
 if (!existsSync(output)) throw new Error(`pkg did not produce ${basename(output)}`);

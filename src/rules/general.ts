@@ -9,16 +9,11 @@ import {
   isMuxedAccountId,
   isString,
   isUrl,
-  normalizePassphraseSeparator,
 } from '../predicates.js';
 import { emptyStringValuesRule } from './empty-values.js';
 import { githubHandleRules } from './github-handle.js';
-import { twitterHandleRules } from './twitter-handle.js';
-import { telegramHandleRules } from './telegram-handle.js';
 import { trailingSlashRule } from './trailing-slash.js';
 import { uppercaseKeyRules } from './uppercase-keys.js';
-import { whitespaceRules } from './whitespace.js';
-import { httpVersionAuditorRules } from '../network/http-version-auditor.js';
 
 /**
  * The `WEB_AUTH_CONTRACT_ID` when it is a valid C... id, with its file path,
@@ -35,7 +30,6 @@ export function webAuthContractIdOf(
 
 /** Rules covering file-level constraints and the global (untabled) fields. */
 export const generalRules: Rule[] = [
-  ...whitespaceRules,
   ...uppercaseKeyRules,
   trailingSlashRule,
   {
@@ -141,7 +135,7 @@ export const generalRules: Rule[] = [
 
       // Whitespace around the `;` is the classic hand-typed mistake, and it
       // breaks signature verification in a way that is painful to debug.
-      const normalized = normalizePassphraseSeparator(passphrase.trim());
+      const normalized = passphrase.trim().replace(/\s*;\s*/, ' ; ');
       const near = KNOWN_PASSPHRASES[normalized];
       ctx.report({
         rule: 'network/passphrase',
@@ -511,9 +505,4 @@ export const generalRules: Rule[] = [
   },
   emptyStringValuesRule,
   ...githubHandleRules,
-  ...twitterHandleRules,
-  ...telegramHandleRules,
-  // Network-bound rule ids live here so `--list-rules` and `--off` know them;
-  // the diagnostics come from `auditHttpVersions` under `--check-network`.
-  ...httpVersionAuditorRules,
 ];
